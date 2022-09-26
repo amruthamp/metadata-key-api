@@ -14,7 +14,6 @@ import (
 	"github.com/fubotv/keyplay/app/db"
 	"github.com/fubotv/keyplay/app/model"
 	"github.com/fubotv/keyplay/app/util"
-	"github.com/google/uuid"
 	"goji.io/pat"
 )
 
@@ -31,7 +30,7 @@ func (s ServiceHandler) GetKeyplayAttribute(w http.ResponseWriter, r *http.Reque
 	key := pat.Param(r, "key")
 	fmt.Println(key, "key data")
 
-	filter := bigtable.RowKeyFilter("^" + "attribute" + RowKeyDelimiter + key + RowKeyDelimiter + ".*" + "$")
+	filter := bigtable.RowKeyFilter("^" + "attribute" + RowKeyDelimiter + key + "$")
 	fmt.Println(filter, "filter in places")
 
 	keyplay, err := db.ReadRowFromBT(s.DatabaseHandler.Table, filter)
@@ -48,8 +47,6 @@ func (s ServiceHandler) GetKeyplayAttribute(w http.ResponseWriter, r *http.Reque
 func (s ServiceHandler) CreateAttributeKeyplay(w http.ResponseWriter, r *http.Request) {
 	var newAttribute model.Attribute
 
-	uniqueId := uuid.New()
-
 	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		fmt.Println(err.Error())
@@ -58,8 +55,7 @@ func (s ServiceHandler) CreateAttributeKeyplay(w http.ResponseWriter, r *http.Re
 	if len(reqBody) > 0 {
 		json.Unmarshal(reqBody, &newAttribute)
 
-		newAttribute.Id = fmt.Sprintf("%v", uniqueId)
-		rowKey := generateRowkey(newAttribute.Name, fmt.Sprintf("%v", uniqueId))
+		rowKey := generateRowkey(newAttribute.Name)
 
 		fmt.Println(rowKey, "rowkey in place")
 
@@ -70,13 +66,11 @@ func (s ServiceHandler) CreateAttributeKeyplay(w http.ResponseWriter, r *http.Re
 		mandatoryMarshalled, _ := json.Marshal(newAttribute.IsMandatory)
 		nameMarshalled, _ := json.Marshal(newAttribute.Name)
 		datatypeMarshalled, _ := json.Marshal(newAttribute.DataType)
-		idMarshalled, _ := json.Marshal(newAttribute.Id)
 
 		mut.Set(db.ColumnFamilyName, "name", bigtable.Now(), nameMarshalled)
 		mut.Set(db.ColumnFamilyName, "isMultipleField", bigtable.Now(), multipleFieldMarshalled)
 		mut.Set(db.ColumnFamilyName, "isMandatory", bigtable.Now(), mandatoryMarshalled)
 		mut.Set(db.ColumnFamilyName, "dataType", bigtable.Now(), datatypeMarshalled)
-		mut.Set(db.ColumnFamilyName, "id", bigtable.Now(), idMarshalled)
 
 		err := db.WriteToBT(s.DatabaseHandler.Table, rowKey, mut)
 		if err != nil {
@@ -93,13 +87,9 @@ func (s ServiceHandler) UpdateAttributeKeyplay(w http.ResponseWriter, r *http.Re
 
 	key := pat.Param(r, "key")
 
-	filter := bigtable.RowKeyFilter(".*" + RowKeyDelimiter + key + RowKeyDelimiter + ".*" + "$")
+	filter := bigtable.RowKeyFilter(".*" + RowKeyDelimiter + key + "$")
 
 	rowkey, _ := db.GetRowKey(s.DatabaseHandler.Table, filter)
-
-	// row, _ := db.SingleRowRead(s.DatabaseHandler.Table, rowkey)
-	// fmt.Println(row, "row -------------->")
-	// oldAttribute := getData(row)
 
 	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -130,7 +120,7 @@ func updateFields(updatedAttribute model.Attribute, mut *bigtable.Mutation) {
 		mut.Set(db.ColumnFamilyName, "name", 0, nameMarshalled)
 	} else if len(updatedAttribute.DataType) > 0 {
 		datatypeMarshalled, _ := json.Marshal(updatedAttribute.DataType)
-		mut.Set(db.ColumnFamilyName, "name", 0, datatypeMarshalled)
+		mut.Set(db.ColumnFamilyName, "dataType", 0, datatypeMarshalled)
 	} else if len(updatedAttribute.IsMandatory) > 0 {
 		mandatoryMarshalled, _ := json.Marshal(updatedAttribute.DataType)
 		mut.Set(db.ColumnFamilyName, "isMandatory", 0, mandatoryMarshalled)
@@ -145,7 +135,7 @@ func (s ServiceHandler) DeleteAttributeKeyplay(w http.ResponseWriter, r *http.Re
 
 	key := pat.Param(r, "key")
 
-	filter := bigtable.RowKeyFilter(".*" + RowKeyDelimiter + key + RowKeyDelimiter + ".*" + "$")
+	filter := bigtable.RowKeyFilter(".*" + RowKeyDelimiter + key + "$")
 
 	rowkey, _ := db.GetRowKey(s.DatabaseHandler.Table, filter)
 
@@ -164,7 +154,7 @@ func (s ServiceHandler) DeleteAttributeKeyplay(w http.ResponseWriter, r *http.Re
 
 }
 
-func generateRowkey(name string, uniqueId string) string {
-	rowkey := "attribute" + RowKeyDelimiter + name + RowKeyDelimiter + uniqueId
+func generateRowkey(name string) string {
+	rowkey := "attribute" + RowKeyDelimiter + name
 	return rowkey
 }

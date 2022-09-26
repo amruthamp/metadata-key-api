@@ -5,5 +5,4 @@ type Attribute struct {
 	IsMultipleField string `json:"isMultipleField"`
 	IsMandatory     string `json:"isMandatory"`
 	DataType        string `json:"dataType"`
-	Id              string `json:"id"`
 }
