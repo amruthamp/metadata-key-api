@@ -69,6 +69,8 @@ func ReadRowFromBT(table *bigtable.Table, filter bigtable.Filter) (model.Attribu
 				json.Unmarshal(col.Value, &attributeData.DataType)
 			} else if qualifier == "id" {
 				json.Unmarshal(col.Value, &attributeData.Id)
+			} else if qualifier == "possibleValues" {
+				json.Unmarshal(col.Value, &attributeData.PossibleValues)
 			}
 		}
 		return true

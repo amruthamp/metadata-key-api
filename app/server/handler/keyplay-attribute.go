@@ -71,12 +71,14 @@ func (s ServiceHandler) CreateAttributeKeyplay(w http.ResponseWriter, r *http.Re
 		nameMarshalled, _ := json.Marshal(newAttribute.Name)
 		datatypeMarshalled, _ := json.Marshal(newAttribute.DataType)
 		idMarshalled, _ := json.Marshal(newAttribute.Id)
+		valuesMarshalled, _ := json.Marshal(newAttribute.PossibleValues)
 
 		mut.Set(db.ColumnFamilyName, "name", bigtable.Now(), nameMarshalled)
 		mut.Set(db.ColumnFamilyName, "isMultipleField", bigtable.Now(), multipleFieldMarshalled)
 		mut.Set(db.ColumnFamilyName, "isMandatory", bigtable.Now(), mandatoryMarshalled)
 		mut.Set(db.ColumnFamilyName, "dataType", bigtable.Now(), datatypeMarshalled)
 		mut.Set(db.ColumnFamilyName, "id", bigtable.Now(), idMarshalled)
+		mut.Set(db.ColumnFamilyName, "possibleValues", bigtable.Now(), valuesMarshalled)
 
 		err := db.WriteToBT(s.DatabaseHandler.Table, rowKey, mut)
 		if err != nil {
@@ -137,6 +139,9 @@ func updateFields(updatedAttribute model.Attribute, mut *bigtable.Mutation) {
 	} else if len(updatedAttribute.IsMultipleField) > 0 {
 		multiplefieldMarshalled, _ := json.Marshal(updatedAttribute.IsMultipleField)
 		mut.Set(db.ColumnFamilyName, "isMultiple", 0, multiplefieldMarshalled)
+	} else if len(updatedAttribute.PossibleValues) > 0 {
+		possibleValuesMarshalled, _ := json.Marshal(updatedAttribute.PossibleValues)
+		mut.Set(db.ColumnFamilyName, "possibleValues", 0, possibleValuesMarshalled)
 	}
 
 }
