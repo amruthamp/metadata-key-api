@@ -152,6 +152,20 @@ func (s ServiceHandler) DeleteAttributeKeyplay(w http.ResponseWriter, r *http.Re
 		util.JsonError(context.Background(), w, http.StatusMethodNotAllowed, errors.New("keyplay not found"))
 	}
 
+	deleteValueFilter := bigtable.RowKeyFilter("value" + RowKeyDelimiter + key + "$")
+	deleteValueRowkey, _ := db.GetRowKey(s.DatabaseHandler.Table, deleteValueFilter)
+
+	if len(deleteValueRowkey) > 0 {
+		mut := bigtable.NewMutation()
+		mut.DeleteRow()
+
+		err := db.WriteToBT(s.DatabaseHandler.Table, deleteValueRowkey, mut)
+		if err != nil {
+			util.JsonError(context.Background(), w, http.StatusNotFound, err)
+		}
+
+	}
+
 }
 
 func generateRowkey(name string) string {
